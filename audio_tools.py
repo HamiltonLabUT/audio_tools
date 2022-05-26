@@ -9,7 +9,7 @@ import numpy as np
 from scipy.signal import hanning, spectrogram, resample, hilbert, butter, filtfilt
 from scipy.io import wavfile
 # import spectools
-from .fbtools import fft2melmx
+from fbtools import fft2melmx
 from matplotlib import pyplot as plt
 from soundsig import sound
 
@@ -53,6 +53,9 @@ def get_envelope(audio, audio_fs, new_fs, cof=25, bef_aft=[0, 0], pad_next_pow2=
         print("Adding %.2f seconds of silence after"%bef_aft[1])
         envelope = np.vstack(( envelope, np.zeros((np.int(bef_aft[1]*new_fs), 1)) ))
 
+    envelope[envelope<0] = 0
+    envelope = envelope/envelope.max()
+    
     return envelope
 
 def get_cse_onset(audio, audio_fs, wins = [0.04], nfilts=80, pos_deriv=True, spec_noise_thresh=1.04):
