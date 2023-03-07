@@ -6,7 +6,7 @@
 # 
 
 import numpy as np
-from scipy.signal import hanning, spectrogram, resample, hilbert, butter, filtfilt
+from scipy.signal import hanning, spectrogram, resample, hilbert, butter, filtfilt, boxcar, convolve
 from scipy.io import wavfile
 # import spectools
 from fbtools import fft2melmx
@@ -242,6 +242,50 @@ def get_mps(audio, audio_fs, window=0.5):
     # The actual temporal and spectral modulation values are given by wt and wf
 
     return soundobj.mps, soundobj.wt, soundobj.wf
+
+def get_cse_onset(specgram, audio=None, audio_fs=None, wins = [0.04], nfilts=80, pos_deriv=True, spec_noise_thresh=1.04):
+    """
+    Get the onset based on cochlear scaled entropy
+    Inputs:
+        audio [np.array] : your audio 
+            - None: do not import audio file [default]
+        audio_fs [float] : audio sampling rate
+            - None: do not import audio sampling rate [default]
+        wins [list] : list of windows to use in the boxcar convolution
+        pos_deriv [bool] : whether to detect onsets only (True) or onsets and offsets (False)
+    Outputs:
+        cse [np.array] : rectified cochlear scaled entropy over window [wins]
+        auddiff [np.array] : instantaneous derivative of spectrogram
+    """
+
+    new_fs = 100 # Sampling frequency of spectrogram
+    if audio is not None:
+        specgram = get_mel_spectrogram(audio, audio_fs, nfilts=nfilts)
+    else:
+        print('using previously collected spectrogram')
+    specgram[specgram<spec_noise_thresh] = 0
+    nfilts, ntimes = specgram.shape
+
+    if pos_deriv is False:
+        auddiff= np.sum(np.diff(np.hstack((np.atleast_2d(specgram[:,0]).T, specgram)))**2, axis=0)
+    else:
+        all_diff = np.diff(np.hstack((np.atleast_2d(specgram[:,0]).T, specgram)))
+        all_diff[all_diff<0] = 0
+        auddiff = np.sum(all_diff**2, axis=0)
+    cse = np.zeros((len(wins), ntimes))
+
+    # Get the windows over which we are summing as bins, not times
+    win_segments = [np.int(w*new_fs) for w in wins]
+
+    for wi, w in enumerate(win_segments):
+        box = np.hstack((np.atleast_2d(boxcar(w)), -np.ones((1, np.int(0.15*new_fs))))).ravel()
+        cse[wi,:] = convolve(auddiff, box, 'full')[:ntimes]
+
+    cse[cse<0] = 0
+    cse = cse/cse.max()
+
+    return cse, auddiff
+
 
 if __name__=='main':
     stim_wav = '/Users/liberty/Documents/Austin/code/semantic_EOG/stimuli/blah.wav'
