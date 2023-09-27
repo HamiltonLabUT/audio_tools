@@ -6,9 +6,13 @@
 # 
 
 import numpy as np
-from scipy.signal import hanning, spectrogram, resample, hilbert, butter, filtfilt, boxcar, convolve
+from scipy.signal import spectrogram, resample, hilbert, butter, filtfilt, boxcar, convolve
+try:
+    from scipy.signal.windows import hann as hanning
+except:
+    from scipy.signal import hanning
+
 from scipy.io import wavfile
-# import spectools
 from fbtools import fft2melmx
 from matplotlib import pyplot as plt
 from soundsig import sound
@@ -27,7 +31,7 @@ def get_envelope(audio, audio_fs, new_fs, cof=25, bef_aft=[0, 0], pad_next_pow2=
     if pad_next_pow2:
         print("Padding the signal to the nearest power of two...this should speed things up")
         orig_len = len(audio)
-        sound_pad = np.hstack((audio, np.zeros((2**np.int(np.ceil(np.log2(len(audio))))-len(audio),))))
+        sound_pad = np.hstack((audio, np.zeros((2**int(np.ceil(np.log2(len(audio))))-len(audio),))))
         audio = sound_pad
 
     print("calculating hilbert transform")
@@ -39,19 +43,19 @@ def get_envelope(audio, audio_fs, new_fs, cof=25, bef_aft=[0, 0], pad_next_pow2=
     print("Low-pass filtering hilbert transform to get audio envelope")
     envelope_long = np.atleast_2d(filtfilt(b, a, env_hilb, axis=0)) #filtfilt makes it non-causal (fwd/backward)
 
-    envelope = resample(envelope_long.T, np.int(np.floor(envelope_long.shape[1]/(audio_fs/new_fs))))
+    envelope = resample(envelope_long.T, int(np.floor(envelope_long.shape[1]/(audio_fs/new_fs))))
     if pad_next_pow2:
         print("Removing padding")
-        final_len = np.int((orig_len/audio_fs)*new_fs)
+        final_len = int((orig_len/audio_fs)*new_fs)
         envelope = envelope[:final_len,:]
         print(envelope.shape)
 
     if bef_aft[0] < 0:
         print("Adding %.2f seconds of silence before"%bef_aft[0])
-        envelope = np.vstack(( np.zeros((np.int(np.abs(bef_aft[0])*new_fs), 1)), envelope ))
+        envelope = np.vstack(( np.zeros((int(np.abs(bef_aft[0])*new_fs), 1)), envelope ))
     if bef_aft[1] > 0:
         print("Adding %.2f seconds of silence after"%bef_aft[1])
-        envelope = np.vstack(( envelope, np.zeros((np.int(bef_aft[1]*new_fs), 1)) ))
+        envelope = np.vstack(( envelope, np.zeros((int(bef_aft[1]*new_fs), 1)) ))
 
     envelope[envelope<0] = 0
     envelope = envelope/envelope.max()
@@ -86,10 +90,10 @@ def get_cse_onset(audio, audio_fs, wins = [0.04], nfilts=80, pos_deriv=True, spe
     cse = np.zeros((len(wins), ntimes))
 
     # Get the windows over which we are summing as bins, not times
-    win_segments = [np.int(w*new_fs) for w in wins]
+    win_segments = [int(w*new_fs) for w in wins]
 
     for wi, w in enumerate(win_segments):
-        box = np.hstack((np.atleast_2d(boxcar(w)), -np.ones((1, np.int(0.15*new_fs))))).ravel()
+        box = np.hstack((np.atleast_2d(boxcar(w)), -np.ones((1, int(0.15*new_fs))))).ravel()
         cse[wi,:] = convolve(auddiff, box, 'full')[:ntimes]
 
     cse[cse<0] = 0
@@ -120,7 +124,7 @@ def get_mel_spectrogram(w, fs, wintime=0.025, steptime=0.010, nfilts=80, minfreq
 
     '''
     if maxfreq is None:
-        maxfreq = np.int(fs/2)
+        maxfreq = int(fs/2)
 
     pspec, e = powspec(w, sr=fs, wintime=wintime, steptime=steptime, dither=1)
     aspectrum, wts, freqs = audspec(pspec, sr=fs, nfilts=nfilts, fbtype='mel', minfreq=minfreq, maxfreq=maxfreq, sumpower=True, bwidth=1.0)
@@ -275,10 +279,10 @@ def get_cse_onset(specgram, audio=None, audio_fs=None, wins = [0.04], nfilts=80,
     cse = np.zeros((len(wins), ntimes))
 
     # Get the windows over which we are summing as bins, not times
-    win_segments = [np.int(w*new_fs) for w in wins]
+    win_segments = [int(w*new_fs) for w in wins]
 
     for wi, w in enumerate(win_segments):
-        box = np.hstack((np.atleast_2d(boxcar(w)), -np.ones((1, np.int(0.15*new_fs))))).ravel()
+        box = np.hstack((np.atleast_2d(boxcar(w)), -np.ones((1, int(0.15*new_fs))))).ravel()
         cse[wi,:] = convolve(auddiff, box, 'full')[:ntimes]
 
     cse[cse<0] = 0

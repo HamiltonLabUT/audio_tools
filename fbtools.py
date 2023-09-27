@@ -18,8 +18,8 @@ def mel2hz(z, htk=False):
     brkpt  = (brkfrq - f_0)/f_sp;  # starting mel value for log region
     logstep = np.exp(np.log(6.4)/27.); # the magic 1.0711703 which is the ratio needed to get from 1000 Hz to 6400 Hz in 27 steps, and is *almost* the ratio between 1000 Hz and the preceding linear filter center at 933.33333 Hz (actually 1000/933.33333 = 1.07142857142857 and  exp(log(6.4)/27) = 1.07117028749447)
 
-    linpts = [z < brkpt]
-    nonlinpts = [z >= brkpt]
+    linpts = z < brkpt
+    nonlinpts = z >= brkpt 
 
     f = 0*z;
 
@@ -112,7 +112,7 @@ def fft2melmx(nfft, sr=8000, nfilts=0, bwidth=1.0, minfreq=0, maxfreq=4000, htkm
     w = np.min((loslope, hislope), axis=0)
     w[w<0] = 0
     # .. then intersect them with each other and zero
-    wts[i, 0:np.int(nfft/2)] = w
+    wts[i, 0:int(nfft/2)] = w
     
   if constamp == 0:
     # Slaney-style mel is scaled to be approx constant E per channel
@@ -121,7 +121,7 @@ def fft2melmx(nfft, sr=8000, nfilts=0, bwidth=1.0, minfreq=0, maxfreq=4000, htkm
     #wts = np.dot(2/(binfrqs[2+np.arange(nfilts)]-binfrqs[np.arange(nfilts)]),wts)
   
   # Make sure 2nd half of FFT is zero
-  wts[:,np.int(nfft/2+2):np.int(nfft)] = 0
+  wts[:,int(nfft/2+2):int(nfft)] = 0
   # seems like a good idea to avoid aliasing
   return wts, binfrqs
 
