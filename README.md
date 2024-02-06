@@ -35,3 +35,18 @@ fs = 100 # Desired sampling rate for the spectrogram
 nfilts = 80 # How many mel bands to return
 mel_spectrogram, freqs = get_mel_spectrogram(audio_waveform, aud_fs, steptime=1/fs, nfilts=nfilts) 
 ```
+
+## Phoneme feature matrix:
+To convert a binary phoneme matrix to a feature matrix, we use the code below:
+
+```python
+from phn_tools import convert_phn
+
+
+phns= ['aa', 'ae', 'ah', 'ao', 'aw', 'ax', 'ax-h', 'axr', 'ay', 'b', 'bcl', 'ch', 'd', 'dcl', 'dh', 'dx', 
+		   'eh', 'el', 'em', 'en', 'eng', 'epi', 'er', 'ey', 'f', 'g', 'gcl', 'hh', 'hv', 'ih', 'ix', 'iy', 
+		   'jh', 'k', 'kcl', 'l', 'm', 'n', 'ng', 'nx', 'ow', 'oy', 'p', 'pcl', 'q', 'r', 's', 'sh', 
+		   't', 'tcl', 'th', 'uh', 'uw', 'ux', 'v', 'w', 'y', 'z', 'zh']
+binary_phn_mat = ... # this will be a binary matrix of time x phonemes. Phonemes are assumed to be in the order above
+binary_feat_mat, fkeys = convert_phn(binary_phn_mat, 'features')
+```
